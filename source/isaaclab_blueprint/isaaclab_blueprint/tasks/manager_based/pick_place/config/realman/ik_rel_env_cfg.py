@@ -20,7 +20,7 @@ from . import joint_pos_env_cfg
 ##
 # Pre-defined configs
 ##
-from isaaclab_assets.robots.realman import REALMAN_HIGH_PD_CFG # isort: skip
+# from isaaclab_assets.robots.realman import REALMAN_HIGH_PD_CFG # isort: skip
 
 
 @configclass
@@ -180,8 +180,8 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
 
         # Set Franka as robot
         # We switch here to a stiffer PD controller for IK tracking to be better.
-        self.scene.robot = REALMAN_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        self.scene.robot.spawn.semantic_tags = [("class", "robot")]
+        # self.scene.robot = REALMAN_HIGH_PD_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        # self.scene.robot.spawn.semantic_tags = [("class", "robot")]
 
         # Set actions for the specific robot type (realman)
         self.actions.arm_action = DifferentialInverseKinematicsActionCfg(

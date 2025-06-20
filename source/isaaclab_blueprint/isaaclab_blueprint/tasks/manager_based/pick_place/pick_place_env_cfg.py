@@ -94,7 +94,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Bin",
         init_state=RigidObjectCfg.InitialStateCfg(pos=[0.2847-0.4279-0.105,-0.3282,-0.014], rot=[1, 0, 0, 0]),
         spawn=UsdFileCfg(
-            usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/KLT_Bin/bin.usd",
+            usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/KLT_Bin/small_KLT.usd",
             scale=(1.0458,0.7028,0.2717),
             rigid_props=RigidBodyPropertiesCfg(
                 solver_position_iteration_count=16,

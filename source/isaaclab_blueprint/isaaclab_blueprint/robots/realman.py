@@ -16,7 +16,7 @@ Reference: https://github.com/frankaemika/franka_ros
 import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
-from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
+from isaaclab_blueprint.utils.assets import ISAACLAB_BLUEPRINT_LOCAL_DIR
 
 ##
 # Configuration
@@ -24,7 +24,7 @@ from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 
 REALMAN_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ISAACLAB_NUCLEUS_DIR}/Robots/RealMan/realman_brannew6.usd",
+        usd_path=f"{ISAACLAB_BLUEPRINT_LOCAL_DIR}/Robots/Realman/realman_brannew/realman_brannew.usd",
         activate_contact_sensors=False,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,

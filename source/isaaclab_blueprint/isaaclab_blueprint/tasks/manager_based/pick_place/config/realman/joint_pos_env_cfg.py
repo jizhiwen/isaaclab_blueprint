@@ -64,6 +64,7 @@ class EventCfg:
     )
 
 
+
 @configclass
 class RealmanCubePickPlaceEnvCfg(PickPlaceEnvCfg):
     def __post_init__(self):

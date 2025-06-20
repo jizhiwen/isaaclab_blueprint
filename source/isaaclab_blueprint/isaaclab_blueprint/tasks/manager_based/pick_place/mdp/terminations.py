@@ -11,6 +11,7 @@ the termination introduced by the function.
 
 from __future__ import annotations
 
+import numpy as np
 import torch
 from typing import TYPE_CHECKING
 
@@ -123,95 +124,43 @@ def cube_placed(
         torch.isclose(robot.data.joint_pos[:, -2], gripper_open_val.to(env.device), atol=atol, rtol=rtol), stacked
     )
 
-    import numpy as np
+    has_failed = torch.tensor(False, dtype=torch.bool)
+    if invalid_ee_frame_reached(env):
+        has_failed = torch.tensor(True, dtype=torch.bool)
 
-    def quaternion_to_euler(w, x, y, z):
-        # Roll (X-axis)
-        roll = np.arctan2(2 * (w*x + y*z), 1 - 2 * (x**2 + y**2))
-        
-        # Pitch (Y-axis)
-        sin_p = 2 * (w*y - z*x)
-        pitch = np.arcsin(sin_p)
-        
-        # Yaw (Z-axis)
-        yaw = np.arctan2(2 * (w*z + x*y), 1 - 2 * (y**2 + z**2))
-        
-        return np.degrees(roll), np.degrees(pitch), np.degrees(yaw)  # 转换为角度
-
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-    end_effector_pos = ee_frame.data.target_pos_w.cpu().numpy()[:, 0, :]
-    end_effector_quat = ee_frame.data.target_quat_w.cpu().numpy()[:, 0, :]
-    # print(ee_frame.data)
-    # print(end_effector_quat)
-
-    # 示例：单位四元数（绕Z轴旋转90度）
-    # w, x, y, z = np.cos(np.pi/4), 0, 0, np.sin(np.pi/4)  # 45度Yaw
-    roll, pitch, yaw = quaternion_to_euler(end_effector_quat[0,0],
-                    end_effector_quat[0,1],
-                    end_effector_quat[0,2],
-                    end_effector_quat[0,3])
-    # print(f"Roll: {roll:.2f}°, Pitch: {pitch:.2f}°, Yaw: {yaw:.2f}°")
-    # Pitch -10 ~ 10
-    # Roll -100 ~ -80
-
-    pitch_tensor = torch.tensor(pitch)  # 转换为 PyTorch 张量
-    roll_tensor = torch.tensor(roll)  # 转换为 PyTorch 张量
-    res1 = torch.logical_and(pitch_tensor >-5, pitch_tensor <5)
-    res2 = torch.logical_and(roll_tensor>-95, roll_tensor<-85)
-    res3 = torch.logical_and(res1, res2)
-    stacked = torch.logical_and(stacked,res3)
+    stacked = torch.logical_and(stacked, has_failed.logical_not())
 
     return stacked
 
-def grapper_error_state(
+
+def invalid_ee_frame_reached(
     env: ManagerBasedRLEnv,
-    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    cube_2_cfg: SceneEntityCfg = SceneEntityCfg("cube_2"),
-    bin_cfg: SceneEntityCfg = SceneEntityCfg("bin"),
-    xy_threshold: float = 0.1,
-    height_threshold: float = 0.005,
-    height_diff: float = 0.0468,
-    gripper_open_val: torch.tensor = torch.tensor([0.04]),
-    atol=0.0001,
-    rtol=0.0001,
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
 ):
-    import numpy as np
-
     def quaternion_to_euler(w, x, y, z):
         # Roll (X-axis)
         roll = np.arctan2(2 * (w*x + y*z), 1 - 2 * (x**2 + y**2))
-        
         # Pitch (Y-axis)
         sin_p = 2 * (w*y - z*x)
         pitch = np.arcsin(sin_p)
-        
         # Yaw (Z-axis)
         yaw = np.arctan2(2 * (w*z + x*y), 1 - 2 * (y**2 + z**2))
-        
-        return np.degrees(roll), np.degrees(pitch), np.degrees(yaw)  # 转换为角度
+        return np.degrees(roll), np.degrees(pitch), np.degrees(yaw)
 
     ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
     end_effector_pos = ee_frame.data.target_pos_w.cpu().numpy()[:, 0, :]
     end_effector_quat = ee_frame.data.target_quat_w.cpu().numpy()[:, 0, :]
-    # print(ee_frame.data)
-    # print(end_effector_quat)
 
-    # 示例：单位四元数（绕Z轴旋转90度）
-    # w, x, y, z = np.cos(np.pi/4), 0, 0, np.sin(np.pi/4)  # 45度Yaw
     roll, pitch, yaw = quaternion_to_euler(end_effector_quat[0,0],
                     end_effector_quat[0,1],
                     end_effector_quat[0,2],
                     end_effector_quat[0,3])
-    # print(f"Roll: {roll:.2f}°, Pitch: {pitch:.2f}°, Yaw: {yaw:.2f}°")
-    # Pitch -10 ~ 10
-    # Roll -100 ~ -80
 
-    pitch_tensor = torch.tensor(pitch)  # 转换为 PyTorch 张量
-    roll_tensor = torch.tensor(roll)  # 转换为 PyTorch 张量
+    pitch_tensor = torch.tensor(pitch)
+    roll_tensor = torch.tensor(roll)
 
-    res1 = torch.logical_or(pitch_tensor < -5, pitch_tensor >5)
-    res2 = torch.logical_or(roll_tensor <-95, roll_tensor>-85)
-    res3 = torch.logical_or(res1, res2)
+    res1 = torch.logical_or(pitch_tensor < -10, pitch_tensor > 10)
+    res2 = torch.logical_or(roll_tensor <-100, roll_tensor>-80)
+    reached = torch.logical_or(res1, res2)
 
-    return res3
+    return reached

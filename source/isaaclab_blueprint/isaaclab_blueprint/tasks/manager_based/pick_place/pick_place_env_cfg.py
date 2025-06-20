@@ -92,11 +92,12 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # Bin
     bin = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/Bin",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.2847-0.4279-0.105,-0.3282,-0.014], rot=[1, 0, 0, 0]),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.2847-0.4279-0.105,-0.3282,-0.03], rot=[1, 0, 0, 0]),
         spawn=UsdFileCfg(
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/KLT_Bin/small_KLT.usd",
             scale=(1.0458,0.7028,0.2717),
             rigid_props=RigidBodyPropertiesCfg(
+                kinematic_enabled=True,
                 solver_position_iteration_count=16,
                 solver_velocity_iteration_count=1,
                 max_angular_velocity=1000.0,
@@ -172,6 +173,8 @@ class TerminationsCfg:
     cube_2_dropping = DoneTerm(
         func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("cube_2")}
     )
+
+    invalid_ee_frame_reached = DoneTerm(func=mdp.invalid_ee_frame_reached)
 
     success = DoneTerm(func=mdp.cube_placed, params={"gripper_open_val": torch.tensor([0.0])})
 

@@ -31,7 +31,7 @@ class EventCfg:
         func=realman_pick_place_events.set_default_joint_pose,
         mode="startup",
         params={
-            "default_pose": [1.6081, 0.6089, 1.1464, -0.0055, 1.3666, 0.0628, 0.0, 0.0],
+            "default_pose": [1.6073, 0.684, 1.3142, -0.006, 1.1221, 0.0643, 0.0, 0.0],
         },
     )
 

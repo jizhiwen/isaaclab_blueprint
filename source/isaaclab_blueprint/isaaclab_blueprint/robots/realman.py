@@ -37,12 +37,12 @@ REALMAN_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            "joint1": 1.6081,
-            "joint2": 0.6089,
-            "joint3": 1.1464,
-            "joint4": -0.0055,
-            "joint5": 1.3666,
-            "joint6": 0.0628,
+            "joint1": 1.6073,
+            "joint2": 0.684,
+            "joint3": 1.3142,
+            "joint4": -0.006,
+            "joint5": 1.1221,
+            "joint6": 0.0643,
             "finger[1-2]_joint": 0.0,
         },
     ),

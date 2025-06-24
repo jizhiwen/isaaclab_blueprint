@@ -89,7 +89,7 @@ import omni.ui as ui
 
 # Additional Isaac Lab imports that can only be imported after the simulator is running
 from isaaclab.devices import OpenXRDevice, Se3Keyboard, Se3SpaceMouse
-from isaaclab_blueprint.devices import Se3Pico
+from isaaclab_blueprint.devices import Se3Pico, Se3PicoRealmanAbs
 
 import isaaclab_mimic.envs  # noqa: F401
 from isaaclab_mimic.ui.instruction_display import InstructionDisplay, show_subtask_instructions
@@ -295,6 +295,8 @@ def main():
         nonlocal running_recording_instance
         if device_name == "keyboard":
             return Se3Keyboard(pos_sensitivity=0.2, rot_sensitivity=0.5)
+        elif device_name == "pico_abs":
+            return Se3PicoRealmanAbs(env, pos_sensitivity=0.2, rot_sensitivity=0.5)
         elif device_name == "pico":
             return Se3Pico(pos_sensitivity=0.2, rot_sensitivity=0.5)
         elif device_name == "spacemouse":

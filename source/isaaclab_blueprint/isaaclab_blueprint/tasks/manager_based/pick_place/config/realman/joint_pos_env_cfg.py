@@ -56,7 +56,7 @@ class EventCfg:
         params={
             # X: Left/Right Y: Front/Back
             #"pose_range": {"x": (-0.06, 0.12), "y": (-0.38, -0.26), "z": (-0.0140 , -0.0140), "yaw": (-1, 1, 0)},
-            "pose_range": {"x": (-0.12, 0.20), "y": (-0.43, -0.20), "z": (-0.0140 , -0.0140), "yaw": (-1, 1, 0)},
+            "pose_range": {"x": (-0.10, 0.18), "y": (-0.43, -0.20), "z": (-0.0140 , -0.0140), "yaw": (0, 0, 0)},
             "min_separation": 0.02,
             "asset_cfgs": [SceneEntityCfg("cube_2")],
             # "radius": 0.40,
@@ -91,7 +91,7 @@ class RealmanCubePickPlaceEnvCfg(PickPlaceEnvCfg):
 
         # Set actions for the specific robot type (realman)
         self.actions.arm_action = mdp.JointPositionActionCfg(
-            asset_name="robot", joint_names=["joint.*"], scale=0.5, use_default_offset=True
+            asset_name="robot", joint_names=["joint.*"], scale=1.0, use_default_offset=False
         )
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
             asset_name="robot",

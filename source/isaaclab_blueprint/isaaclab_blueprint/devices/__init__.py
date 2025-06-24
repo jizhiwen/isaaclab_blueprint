@@ -6,3 +6,4 @@
 """Keyboard device for SE(3) control."""
 
 from .se3_pico import Se3Pico
+from .se3_pico_realman_abs import Se3PicoRealmanAbs

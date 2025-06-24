@@ -188,7 +188,7 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
             asset_name="robot",
             joint_names=["joint.*"],
             body_name="Link6",
-            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+            controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
             scale=1.0,
             body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.107]),
         )

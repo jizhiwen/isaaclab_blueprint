@@ -6,6 +6,7 @@
 """Keyboard controller for SE(3) control."""
 
 import numpy as np
+import torch
 import weakref
 from collections.abc import Callable
 from scipy.spatial.transform import Rotation
@@ -15,6 +16,8 @@ import omni
 
 
 from isaaclab.devices.device_base import DeviceBase
+from isaaclab.envs import ManagerBasedEnv
+import isaaclab.utils.math as math_utils
 
 ############################### pico control ######################################
 import rclpy
@@ -25,13 +28,11 @@ import json
 
 lock = threading.Lock()
 close_gripper = False
-last_delta_pos = np.zeros(3)  # (x, y, z)
-last_delta_rot = np.zeros(3)  # (roll, pitch, yaw)
 current_delta_pos = np.zeros(3)  # (x, y, z)
 current_delta_rot = np.zeros(3)  # (roll, pitch, yaw)
 
-last_pose = None
-last_rot = None
+ee_pos_curr = None
+ee_quat_curr = None
 
 def ros_thread(node):
     """ROS2节点运行线程"""
@@ -48,8 +49,6 @@ class CustomRos2Subscriber(Node):
             10
         )
         self.sub_joint  # 防止未使用变量警告
-        
-        self.last_move = False
         
     def parse_pico_msg(self, msg) -> bool:
         try:
@@ -96,59 +95,32 @@ class CustomRos2Subscriber(Node):
             # print(f"timestamp : {self.ts}")
         
         return True
-    
+
+
     def fit_to_key(self):
-        global last_pose, last_rot, close_gripper
+        global close_gripper
         if self.indexTrig <= 0.5:
             close_gripper = False
         if self.indexTrig > 0.5:
             close_gripper = True
-        
-        # 旁边的控制移动键松开的瞬间纪录delta位姿
-        if not self.handTrig:
-            if self.last_move:
-                last_delta_pos[0] = current_delta_pos[0]
-                last_delta_pos[1] = current_delta_pos[1]
-                last_delta_pos[2] = current_delta_pos[2]
-                # last_delta_rot = current_delta_rot
-                self.last_move = False
 
-            last_pose = None
-            current_delta_pos[0] = 0.0
-            current_delta_pos[1] = 0.0
-            current_delta_pos[2] = 0.0
-
-            last_rot = None
-            current_delta_rot[0] = 0.0
-            current_delta_rot[1] = 0.0
-            current_delta_rot[2] = 0.0
-
-            return
-        
-        self.last_move = True
         with lock:
-            if last_pose is None or last_rot is None:
-                last_pose = np.array([self.x, self.y, self.z])
-                last_rot = np.array([self.rx, self.ry, self.rz])
-                return
-
-            current_delta_pos[0] = -(self.x - last_pose[0]) * 4.0
-            current_delta_pos[1] = -(self.z - last_pose[2]) * 4.0
-            current_delta_pos[2] = (self.y - last_pose[1]) * 4.0
-
-            last_pose = np.array([self.x, self.y, self.z])
-
+            current_delta_pos[0] = -self.x
+            current_delta_pos[1] = -self.z
+            current_delta_pos[2] = self.y
 
             # 目前pico的姿态信息还没有发布出来，目前仅使用位置xyz
 
-            # current_delta_rot[0] = (self.rz - last_rot[2]) * 2.0
-            # current_delta_rot[1] = (self.rz - last_rot[2])
-            current_delta_rot[2] = -(self.rx - last_rot[0]) * 5.0
+            current_delta_rot[0] = 0
+            current_delta_rot[1] = 0
+            current_delta_rot[2] = -self.rx
 
-            last_rot = np.array([self.rx, self.ry, self.rz])
-                
-        return
-       
+        global ee_pos_curr, ee_quat_curr
+        if not self.handTrig:
+            ee_pos_curr = None
+            ee_quat_curr = None
+
+
     def pico_topic_callback(self, msg):
         # print("""接收到 pico_driver/pose 消息后的处理逻辑""")
         
@@ -158,7 +130,7 @@ class CustomRos2Subscriber(Node):
             print("pico 数据解析失败")
 ############################### pico control ######################################
 
-class Se3Pico(DeviceBase):
+class Se3PicoRealmanAbs(DeviceBase):
     """A keyboard controller for sending SE(3) commands as delta poses and binary command (open/close).
 
     This class is designed to provide a keyboard controller for a robotic arm with a gripper.
@@ -189,13 +161,27 @@ class Se3Pico(DeviceBase):
 
     """
 
-    def __init__(self, pos_sensitivity: float = 0.4, rot_sensitivity: float = 0.8):
+    def __init__(self, env: ManagerBasedEnv, pos_sensitivity: float = 0.4, rot_sensitivity: float = 0.8):
         """Initialize the keyboard layer.
 
         Args:
             pos_sensitivity: Magnitude of input position command scaling. Defaults to 0.05.
             rot_sensitivity: Magnitude of scale input rotation commands scaling. Defaults to 0.5.
         """
+        # store asset
+        self._asset : Articulation = env.scene["robot"]
+        # parse the body index
+        body_ids, body_names = self._asset.find_bodies("Link6")
+        if len(body_ids) != 1:
+            raise ValueError(
+                f"Expected one match for the body name: {self.cfg.body_name}. Found {len(body_ids)}: {body_names}."
+            )
+        # save only the first body index
+        self._body_idx = body_ids[0]
+        self._body_name = body_names[0]
+        self._offset_pos = torch.tensor([[0.0, 0.0, 0.107]], dtype=torch.float, device=torch.device('cuda:0'))
+        self._offset_rot = torch.tensor([[1.0, 0.0, 0.0, 0.0]], dtype=torch.float, device=torch.device('cuda:0'))
+
         # store inputs
         self.pos_sensitivity = pos_sensitivity
         self.rot_sensitivity = rot_sensitivity
@@ -242,6 +228,27 @@ class Se3Pico(DeviceBase):
         msg += "\tRotate arm along z-axis: C/V"
         return msg
 
+    def _compute_frame_pose(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """Computes the pose of the target frame in the root frame.
+
+        Returns:
+            A tuple of the body's position and orientation in the root frame.
+        """
+        # obtain quantities from simulation
+        ee_pos_w = self._asset.data.body_pos_w[:, self._body_idx]
+        ee_quat_w = self._asset.data.body_quat_w[:, self._body_idx]
+        root_pos_w = self._asset.data.root_pos_w
+        root_quat_w = self._asset.data.root_quat_w
+        # compute the pose of the body in the root frame
+        ee_pose_b, ee_quat_b = math_utils.subtract_frame_transforms(root_pos_w, root_quat_w, ee_pos_w, ee_quat_w)
+        # account for the offset
+
+        ee_pose_b, ee_quat_b = math_utils.combine_frame_transforms(
+            ee_pose_b, ee_quat_b, self._offset_pos, self._offset_rot
+        )
+
+        return ee_pose_b, ee_quat_b
+
     """
     Operations
     """
@@ -271,13 +278,21 @@ class Se3Pico(DeviceBase):
         Returns:
             A tuple containing the delta pose command and gripper commands.
         """
-        global close_gripper
-        # convert to rotation vector
-        rot_vec = Rotation.from_euler("XYZ", self._delta_rot).as_rotvec()
-        current_rot_vec = Rotation.from_euler("XYZ", current_delta_rot).as_rotvec()
-        # return the command and gripper state
+        global ee_pos_curr, ee_quat_curr, close_gripper
+        # obtain quantities from simulation
+        if ee_pos_curr is None or ee_quat_curr is None:
+            ee_pos_curr, ee_quat_curr = self._compute_frame_pose()
+
+        # source_pos: torch.Tensor, source_rot: torch.Tensor, delta_pose: torch.Tensor, eps: float = 1.0e-6
+        target_pos, target_rot = math_utils.apply_delta_pose(
+                                    ee_pos_curr,
+                                    ee_quat_curr,
+                                    torch.tensor([np.concatenate((current_delta_pos, current_delta_rot))],
+                                                  device=torch.device('cuda:0')))
         # print(current_delta_pos, current_delta_rot)
-        return np.concatenate([self._delta_pos+current_delta_pos, rot_vec+current_rot_vec]), close_gripper or self._close_gripper
+        # print(np.concatenate((target_pos.cpu().numpy()[0] , target_rot.cpu().numpy()[0])))
+        return np.concatenate((target_pos.cpu().numpy()[0] , target_rot.cpu().numpy()[0])), close_gripper or self._close_gripper
+
 
     """
     Internal helpers.

@@ -159,8 +159,8 @@ def invalid_ee_frame_reached(
     pitch_tensor = torch.tensor(pitch)
     roll_tensor = torch.tensor(roll)
 
-    res1 = torch.logical_or(pitch_tensor < -10, pitch_tensor > 10)
-    res2 = torch.logical_or(roll_tensor <-100, roll_tensor>-80)
+    res1 = torch.logical_or(pitch_tensor < -5, pitch_tensor > 5)
+    res2 = torch.logical_or(roll_tensor <-95, roll_tensor>-85)
     reached = torch.logical_or(res1, res2)
 
     return reached

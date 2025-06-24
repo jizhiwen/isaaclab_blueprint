@@ -633,11 +633,14 @@ def main():
             
             actions = []
             deta_actions = np.array(f[f'data/demo_{dataset}/actions'][:], np.float32)
+            joint_actions = np.array(f[f'data/demo_{dataset}/joint_actions'][:], np.float32)
             for row in range(0, deta_actions.shape[0]):
                 cur_state = states[row]
                 step = deta_actions[row]
+                joint_action = joint_actions[row]
                 cur_action = np.zeros(7, dtype=np.float32)
-                cur_action[:-1] = cur_state[:-1] + step[:-1]
+                # cur_action[:-1] = cur_state[:-1] + step[:-1]
+                cur_action[:-1] = joint_action
                 cur_action[-1] = 1000 if step[-1] == 1 else 0
                 actions.append(copy.deepcopy(cur_action))
             actions = np.array(actions, dtype=np.float32)

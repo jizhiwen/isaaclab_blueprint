@@ -31,7 +31,7 @@ class RealmanCubePickPlaceMimicEnvCfg(RealmanCubePickPlaceEnvCfg, MimicEnvCfg):
         self.datagen_config.generation_transform_first_robot_pose = False
         self.datagen_config.generation_interpolate_from_last_target_pose = True
         self.datagen_config.max_num_failures = 25
-        self.datagen_config.seed = 1
+        self.datagen_config.seed = 2
 
         # The following are the subtask configurations for the stack task.
         subtask_configs = []
@@ -41,9 +41,9 @@ class RealmanCubePickPlaceMimicEnvCfg(RealmanCubePickPlaceEnvCfg, MimicEnvCfg):
                 subtask_term_signal="grasp_1",
                 subtask_term_offset_range=(10, 20),
                 selection_strategy="nearest_neighbor_object",
-                selection_strategy_kwargs={"nn_k": 3},
+                selection_strategy_kwargs={"nn_k": 1},
                 action_noise=0.00,
-                num_interpolation_steps=5,
+                num_interpolation_steps=10,
                 num_fixed_steps=0,
                 apply_noise_during_interpolation=False,
             )
@@ -54,9 +54,9 @@ class RealmanCubePickPlaceMimicEnvCfg(RealmanCubePickPlaceEnvCfg, MimicEnvCfg):
                 subtask_term_signal=None,
                 subtask_term_offset_range=(0, 0),
                 selection_strategy="nearest_neighbor_object",
-                selection_strategy_kwargs={"nn_k": 3},
+                selection_strategy_kwargs={"nn_k": 1},
                 action_noise=0.00,
-                num_interpolation_steps=5,
+                num_interpolation_steps=10,
                 num_fixed_steps=0,
                 apply_noise_during_interpolation=False,
             )

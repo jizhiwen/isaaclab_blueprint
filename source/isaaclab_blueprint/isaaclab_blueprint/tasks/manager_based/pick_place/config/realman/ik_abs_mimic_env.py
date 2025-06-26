@@ -24,7 +24,16 @@ class RealmanCubePickPlaceIKAbsMimicEnv(ManagerBasedRLMimicEnv):
         eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids]
         eef_quat = self.obs_buf["policy"]["eef_quat"][env_ids]
         # Quaternion format is w,x,y,z
-        return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
+        # return PoseUtils.make_pose(eef_pos, PoseUtils.matrix_from_quat(eef_quat))
+
+        rot_mat = PoseUtils.matrix_from_quat(eef_quat)
+        col0 = rot_mat[:, :, 0]  # First column
+        col1 = rot_mat[:, :, 1]  # Second column
+        col2 = rot_mat[:, :, 2]  # Third column
+
+
+        transformed_rot_mat = torch.stack([-col2, -col0, col1], dim=2)
+        return PoseUtils.make_pose(eef_pos, transformed_rot_mat)
 
     def target_eef_pose_to_action(
         self, target_eef_pose_dict: dict, gripper_action_dict: dict, noise: float | None = None, env_id: int = 0

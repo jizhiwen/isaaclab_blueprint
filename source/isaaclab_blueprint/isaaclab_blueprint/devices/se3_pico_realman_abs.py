@@ -105,9 +105,9 @@ class CustomRos2Subscriber(Node):
             close_gripper = True
 
         with lock:
-            current_delta_pos[0] = -self.x
-            current_delta_pos[1] = -self.z
-            current_delta_pos[2] = self.y
+            current_delta_pos[0] = -self.x * 0.4
+            current_delta_pos[1] = -self.z * 0.4
+            current_delta_pos[2] = self.y * 0.4
 
             # 目前pico的姿态信息还没有发布出来，目前仅使用位置xyz
 

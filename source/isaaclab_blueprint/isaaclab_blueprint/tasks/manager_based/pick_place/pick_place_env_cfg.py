@@ -69,7 +69,13 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
-        spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=3000.0),
+        spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=1500.0),
+    )
+
+    disk_light = AssetBaseCfg(
+        prim_path="{ENV_REGEX_NS}/disk_light",
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-1.293, 0.0, 1.46761], rot=[0.98615, 0.0, -0.16583, 0.0]),
+        spawn=sim_utils.DiskLightCfg(color=(0.75, 0.75, 0.75), intensity=10000.0, radius=1.0),
     )
 
     # Cube

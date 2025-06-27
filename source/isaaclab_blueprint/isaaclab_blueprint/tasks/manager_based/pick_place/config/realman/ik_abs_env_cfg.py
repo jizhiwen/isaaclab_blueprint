@@ -205,7 +205,7 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
 
         # Set table view camera
         self.scene.table_cam = CameraCfg(
-            prim_path="{ENV_REGEX_NS}/Robot/rm65/Link6/table_cam",
+            prim_path="{ENV_REGEX_NS}/Robot/pgi/pgi_base/table_cam",
             update_period=0.0666,
             height=480,
             width=640,
@@ -213,9 +213,9 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
             colorize_semantic_segmentation=True,
             semantic_segmentation_mapping=MAPPING,
             spawn=sim_utils.PinholeCameraCfg(
-                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+                focal_length=22.0, focus_distance=400.0, horizontal_aperture=35.0, clipping_range=(0.1, 1.0e5)
             ),
-            offset=CameraCfg.OffsetCfg(pos=(-0.3934, 0, -0.11359), rot=(0.61008,-0.2652, 0.3313,-0.66911), convention="ros"),
+            offset=CameraCfg.OffsetCfg(pos=(-0.01, 0.0, -0.15), rot=(0.0, 0.0, 0.42262, 0.90631), convention="ros"),
         )
 
         # Set table view camera
@@ -229,9 +229,9 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
             semantic_segmentation_mapping=MAPPING,
             # h = 1.37456192*f
             spawn=sim_utils.PinholeCameraCfg(
-                focal_length=24.0, focus_distance=400.0, horizontal_aperture=32.989, clipping_range=(0.1, 1.0e5)
+                focal_length=60.0, focus_distance=400.0, horizontal_aperture=50.0, clipping_range=(0.1, 1.0e5)
             ),
-            offset=CameraCfg.OffsetCfg(pos=(0, -0.85, 0.2305), rot=(-0.58779, 0.80902, 0, 0), convention="ros"),
+            offset=CameraCfg.OffsetCfg(pos=(-0.02834, -0.84269, 0.20111), rot=(-0.58743, 0.80853, -0.02804, 0.02037), convention="ros"),
         )
 
         # Set table view camera
@@ -245,7 +245,7 @@ class RealmanCubePickPlaceEnvCfg(joint_pos_env_cfg.RealmanCubePickPlaceEnvCfg):
             semantic_segmentation_mapping=MAPPING,
             # h = 1.37456192*f
             spawn=sim_utils.PinholeCameraCfg(
-                focal_length=24.0, focus_distance=400.0, horizontal_aperture=32.989, clipping_range=(0.1, 1.0e5)
+                focal_length=40.0, focus_distance=400.0, horizontal_aperture=30.0, clipping_range=(0.1, 1.0e5)
             ),
-            offset=CameraCfg.OffsetCfg(pos=(0.54927, -0.37389, 0.0499), rot=(-0.5, 0.5, 0.5, -0.5), convention="ros"),
+            offset=CameraCfg.OffsetCfg(pos=(0.55604, -0.36226, 0.12774), rot=(-0.41194, 0.57891, 0.56742, -0.41616), convention="ros"),
         )

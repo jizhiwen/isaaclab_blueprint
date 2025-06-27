@@ -1,0 +1,115 @@
+diff --git a/source/isaaclab/isaaclab/envs/mdp/actions/task_space_actions.py b/source/isaaclab/isaaclab/envs/mdp/actions/task_space_actions.py
+index 89f5181717..c5a9627ed8 100644
+--- a/source/isaaclab/isaaclab/envs/mdp/actions/task_space_actions.py
++++ b/source/isaaclab/isaaclab/envs/mdp/actions/task_space_actions.py
+@@ -178,6 +178,11 @@ class DifferentialInverseKinematicsAction(ActionTerm):
+         # set the joint position command
+         self._asset.set_joint_position_target(joint_pos_des, self._joint_ids)
+ 
++        self._joint_action = joint_pos_des
++
++    def joint_action(self):
++        return self._joint_action
++
+     def reset(self, env_ids: Sequence[int] | None = None) -> None:
+         self._raw_actions[env_ids] = 0.0
+ 
+diff --git a/source/isaaclab/isaaclab/envs/mdp/recorders/recorders.py b/source/isaaclab/isaaclab/envs/mdp/recorders/recorders.py
+index faf3e1f674..6faa54e8dc 100644
+--- a/source/isaaclab/isaaclab/envs/mdp/recorders/recorders.py
++++ b/source/isaaclab/isaaclab/envs/mdp/recorders/recorders.py
+@@ -36,6 +36,12 @@ class PreStepActionsRecorder(RecorderTerm):
+         return "actions", self._env.action_manager.action
+ 
+ 
++class PoseStepJointActionRecorder(RecorderTerm):
++
++    def record_post_step(self):
++        return "joint_actions", self._env.action_manager.joint_action
++
++
+ class PreStepFlatPolicyObservationsRecorder(RecorderTerm):
+     """Recorder term that records the policy group observations in each step."""
+ 
+diff --git a/source/isaaclab/isaaclab/envs/mdp/recorders/recorders_cfg.py b/source/isaaclab/isaaclab/envs/mdp/recorders/recorders_cfg.py
+index 79efa315d0..0de5ad1178 100644
+--- a/source/isaaclab/isaaclab/envs/mdp/recorders/recorders_cfg.py
++++ b/source/isaaclab/isaaclab/envs/mdp/recorders/recorders_cfg.py
+@@ -40,6 +40,13 @@ class PreStepFlatPolicyObservationsRecorderCfg(RecorderTermCfg):
+     class_type: type[RecorderTerm] = recorders.PreStepFlatPolicyObservationsRecorder
+ 
+ 
++@configclass
++class PostStepJointActionsRecorderCfg(RecorderTermCfg):
++    """Configuration for the step state recorder term."""
++
++    class_type: type[RecorderTerm] = recorders.PoseStepJointActionRecorder
++
++
+ ##
+ # Recorder manager configurations.
+ ##
+@@ -53,3 +60,4 @@ class ActionStateRecorderManagerCfg(RecorderManagerBaseCfg):
+     record_post_step_states = PostStepStatesRecorderCfg()
+     record_pre_step_actions = PreStepActionsRecorderCfg()
+     record_pre_step_flat_policy_observations = PreStepFlatPolicyObservationsRecorderCfg()
++    record_post_step_joint_actions = PostStepJointActionsRecorderCfg()
+diff --git a/source/isaaclab/isaaclab/managers/action_manager.py b/source/isaaclab/isaaclab/managers/action_manager.py
+index 72e78e68cb..91660a5cdd 100644
+--- a/source/isaaclab/isaaclab/managers/action_manager.py
++++ b/source/isaaclab/isaaclab/managers/action_manager.py
+@@ -245,6 +245,17 @@ class ActionManager(ManagerBase):
+         """The actions sent to the environment. Shape is (num_envs, total_action_dim)."""
+         return self._action
+ 
++    @property
++    def joint_action(self) -> torch.Tensor:
++        from isaaclab.envs.mdp.actions.task_space_actions import DifferentialInverseKinematicsAction
++        for term in self._terms.values():
++            if not isinstance(term, DifferentialInverseKinematicsAction):
++                continue
++
++            self._joint_action = term.joint_action()
++
++        return self._joint_action
++
+     @property
+     def prev_action(self) -> torch.Tensor:
+         """The previous actions sent to the environment. Shape is (num_envs, total_action_dim)."""
+diff --git a/source/isaaclab/isaaclab/utils/assets.py b/source/isaaclab/isaaclab/utils/assets.py
+index 2318a9be55..ddca62f6d0 100644
+--- a/source/isaaclab/isaaclab/utils/assets.py
++++ b/source/isaaclab/isaaclab/utils/assets.py
+@@ -24,16 +24,16 @@ import omni.client
+ NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/cloud")
+ """Path to the root directory on the Nucleus Server."""
+ 
+-NVIDIA_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/NVIDIA"
++LOCAL_ASSET_ROOT_DIR = "/home/robot/isaacsim_assets/Assets/Isaac/4.5"
++NVIDIA_NUCLEUS_DIR = f"{LOCAL_ASSET_ROOT_DIR}/NVIDIA"
+ """Path to the root directory on the NVIDIA Nucleus Server."""
+ 
+-ISAAC_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/Isaac"
++ISAAC_NUCLEUS_DIR = f"{LOCAL_ASSET_ROOT_DIR}/Isaac"
+ """Path to the ``Isaac`` directory on the NVIDIA Nucleus Server."""
+ 
+ ISAACLAB_NUCLEUS_DIR = f"{ISAAC_NUCLEUS_DIR}/IsaacLab"
+ """Path to the ``Isaac/IsaacLab`` directory on the NVIDIA Nucleus Server."""
+ 
+-
+ def check_file_path(path: str) -> Literal[0, 1, 2]:
+     """Checks if a file exists on the Nucleus Server or locally.
+ 
+diff --git a/source/isaaclab_mimic/isaaclab_mimic/datagen/generation.py b/source/isaaclab_mimic/isaaclab_mimic/datagen/generation.py
+index 70f7c7d19c..348f55cde2 100644
+--- a/source/isaaclab_mimic/isaaclab_mimic/datagen/generation.py
++++ b/source/isaaclab_mimic/isaaclab_mimic/datagen/generation.py
+@@ -178,7 +178,7 @@ def setup_env_config(
+         raise NotImplementedError("No success termination term was found in the environment.")
+ 
+     # Configure for data generation
+-    env_cfg.terminations = None
++    # env_cfg.terminations = None
+     env_cfg.observations.policy.concatenate_terms = False
+ 
+     # Setup recorders
